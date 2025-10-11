@@ -94,7 +94,6 @@ int main(int argc, char **argv) {
     int *array = malloc(sizeof(int) * array_size);
     GenerateArray(array, array_size, seed);
 
-    // Подготовка структур для pipe (если используется)
     int (*pipe_fds)[2] = NULL;
     if (!with_files) {
         pipe_fds = malloc(pnum * sizeof(int[2]));
@@ -110,21 +109,18 @@ int main(int argc, char **argv) {
     struct timeval start_time;
     gettimeofday(&start_time, NULL);
 
-    // Создание дочерних процессов
     for (int i = 0; i < pnum; i++) {
         pid_t child_pid = fork();
         if (child_pid >= 0) {
             if (child_pid == 0) {
-                // Дочерний процесс
                 if (!with_files) {
-                    // Закрываем ненужные дескрипторы pipe
                     for (int j = 0; j < pnum; j++) {
                         if (j != i) {
                             close(pipe_fds[j][0]);
                             close(pipe_fds[j][1]);
                         }
                     }
-                    close(pipe_fds[i][0]); // Закрываем читающий конец
+                    close(pipe_fds[i][0]);
                 }
 
                 // Вычисляем границы части массива для этого процесса
@@ -136,7 +132,7 @@ int main(int argc, char **argv) {
                 struct MinMax local_min_max = GetMinMax(array, begin, end);
 
                 if (with_files) {
-                    // Используем файлы для передачи результатов
+                    // файлы
                     char filename[32];
                     sprintf(filename, "min_max_%d.txt", i);
                     FILE *file = fopen(filename, "w");
@@ -145,7 +141,7 @@ int main(int argc, char **argv) {
                         fclose(file);
                     }
                 } else {
-                    // Используем pipe для передачи результатов
+                    // pipe
                     write(pipe_fds[i][1], &local_min_max.min, sizeof(int));
                     write(pipe_fds[i][1], &local_min_max.max, sizeof(int));
                     close(pipe_fds[i][1]);
@@ -157,7 +153,7 @@ int main(int argc, char **argv) {
                 // Родительский процесс
                 active_child_processes++;
                 if (!with_files) {
-                    close(pipe_fds[i][1]); // Закрываем записывающий конец в родителе
+                    close(pipe_fds[i][1]);
                 }
             }
         } else {
@@ -166,13 +162,11 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Ожидание завершения всех дочерних процессов
     while (active_child_processes > 0) {
         wait(NULL);
         active_child_processes--;
     }
 
-    // Сбор и объединение результатов
     struct MinMax min_max;
     min_max.min = INT_MAX;
     min_max.max = INT_MIN;
@@ -189,7 +183,7 @@ int main(int argc, char **argv) {
             if (file != NULL) {
                 fscanf(file, "%d %d", &min, &max);
                 fclose(file);
-                remove(filename); // Удаляем временный файл
+                remove(filename);
             }
         } else {
             // Чтение из pipe
