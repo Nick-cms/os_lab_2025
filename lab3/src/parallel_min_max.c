@@ -86,8 +86,7 @@ int main(int argc, char **argv) {
     }
 
     if (seed == -1 || array_size == -1 || pnum == -1) {
-        printf("Usage: %s --seed \"num\" --array_size \"num\" --pnum \"num\" [--by_files]\n",
-               argv[0]);
+        printf("Usage: %s --seed \"num\" --array_size \"num\" --pnum \"num\" [--by_files]\n", argv[0]);
         return 1;
     }
 
@@ -123,16 +122,13 @@ int main(int argc, char **argv) {
                     close(pipe_fds[i][0]);
                 }
 
-                // Вычисляем границы части массива для этого процесса
                 int block_size = array_size / pnum;
                 int begin = i * block_size;
                 int end = (i == pnum - 1) ? array_size : (i + 1) * block_size;
 
-                // Ищем min и max в своей части массива
                 struct MinMax local_min_max = GetMinMax(array, begin, end);
 
                 if (with_files) {
-                    // файлы
                     char filename[32];
                     sprintf(filename, "min_max_%d.txt", i);
                     FILE *file = fopen(filename, "w");
@@ -141,7 +137,6 @@ int main(int argc, char **argv) {
                         fclose(file);
                     }
                 } else {
-                    // pipe
                     write(pipe_fds[i][1], &local_min_max.min, sizeof(int));
                     write(pipe_fds[i][1], &local_min_max.max, sizeof(int));
                     close(pipe_fds[i][1]);
@@ -150,7 +145,6 @@ int main(int argc, char **argv) {
                 free(array);
                 exit(0);
             } else {
-                // Родительский процесс
                 active_child_processes++;
                 if (!with_files) {
                     close(pipe_fds[i][1]);
@@ -176,7 +170,6 @@ int main(int argc, char **argv) {
         int max = INT_MIN;
 
         if (with_files) {
-            // Чтение из файлов
             char filename[32];
             sprintf(filename, "min_max_%d.txt", i);
             FILE *file = fopen(filename, "r");
@@ -186,7 +179,6 @@ int main(int argc, char **argv) {
                 remove(filename);
             }
         } else {
-            // Чтение из pipe
             read(pipe_fds[i][0], &min, sizeof(int));
             read(pipe_fds[i][0], &max, sizeof(int));
             close(pipe_fds[i][0]);
