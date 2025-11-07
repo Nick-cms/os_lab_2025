@@ -3,23 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
 #include "utils.h"
+#include "sum_lib.h"
 
 void GenerateArray(int *array, unsigned int array_size, unsigned int seed);
-
-struct SumArgs {
-  int *array;
-  int begin;
-  int end;
-};
-
-int Sum(const struct SumArgs *args) {
-  int sum = 0;
-  for (int i = args->begin; i < args->end; i++) {
-    sum += args->array[i];
-  }
-  return sum;
-}
 
 void *ThreadSum(void *args) {
   struct SumArgs *sum_args = (struct SumArgs *)args;
@@ -80,6 +68,10 @@ int main(int argc, char **argv) {
     args[i].end = (i == threads_num - 1) ? array_size : (i + 1) * block_size;
   }
   
+  // Начало замера времени
+  struct timespec start_time, end_time;
+  clock_gettime(CLOCK_MONOTONIC, &start_time);
+  
   // Создание потоков
   for (uint32_t i = 0; i < threads_num; i++) {
     if (pthread_create(&threads[i], NULL, ThreadSum, (void *)&args[i])) {
@@ -96,8 +88,16 @@ int main(int argc, char **argv) {
     pthread_join(threads[i], (void **)&sum);
     total_sum += sum;
   }
+  
+  // Конец замера времени
+  clock_gettime(CLOCK_MONOTONIC, &end_time);
+  
+  // Вычисление времени выполнения в секундах
+  double execution_time = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_nsec - start_time.tv_nsec) / 1000000000.0;
 
   free(array);
   printf("Total Sum: %d\n", total_sum);
+  printf("Execution Time: %.6f seconds\n", execution_time);
+  
   return 0;
 }

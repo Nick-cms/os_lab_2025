@@ -4,8 +4,8 @@ TARGETS = parallel_sum
 all: $(TARGETS)
 
 # Сборка parallel_sum
-parallel_sum: parallel_sum.c utils.c
-	$(CC) -o $@ parallel_sum.c utils.c
+parallel_sum: parallel_sum.c sum_lib.c utils.c
+	$(CC) -o $@ parallel_sum.c sum_lib.c utils.c
 
 # Тест для parallel_sum
 test: parallel_sum

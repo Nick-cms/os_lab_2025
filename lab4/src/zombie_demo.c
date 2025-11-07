@@ -5,7 +5,7 @@
 #include <string.h>
 
 void demonstrate_zombie() {
-    printf("=== Демонстрация зомби-процессов ===\n");
+    printf("Демонстрация зомби-процессов\n");
     
     pid_t pid = fork();
     
@@ -35,7 +35,7 @@ void demonstrate_zombie() {
 }
 
 void multiple_zombies() {
-    printf("\n=== Множественные зомби-процессы ===\n");
+    printf("\nМножественные зомби-процессы\n");
     
     int num_children = 3;
     pid_t children[3];
@@ -70,7 +70,7 @@ void multiple_zombies() {
 }
 
 void prevent_zombie_with_wait() {
-    printf("\n=== Предотвращение зомби с помощью wait() ===\n");
+    printf("\nПредотвращение зомби с помощью wait()\n");
     
     pid_t pid = fork();
     
