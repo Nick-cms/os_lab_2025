@@ -19,7 +19,7 @@ void* thread1_function(void* arg) {
     sleep(1);
     
     printf("Thread 1: Trying to lock mutex2...\n");
-    pthread_mutex_lock(&mutex2);  // DEADLOCK здесь!
+    pthread_mutex_lock(&mutex2);  // DEADLOCK
     printf("Thread 1: Locked mutex2\n");
     
     // Критическая секция
