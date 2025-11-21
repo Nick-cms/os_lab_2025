@@ -35,14 +35,16 @@ uint64_t MultModulo(uint64_t a, uint64_t b, uint64_t mod) {
 uint64_t Factorial(const struct FactorialArgs *args) {
   uint64_t ans = 1;
 
-  // TODO: your code here
+  for (uint64_t i = args->begin; i <= args->end; i++) {
+    ans = MultModulo(ans, i, args->mod);
+  }
 
   return ans;
 }
 
 void *ThreadFactorial(void *args) {
   struct FactorialArgs *fargs = (struct FactorialArgs *)args;
-  return (void *)(uint64_t *)Factorial(fargs);
+  return (void *)(uint64_t)(uint64_t)Factorial(fargs);
 }
 
 int main(int argc, char **argv) {
@@ -50,7 +52,6 @@ int main(int argc, char **argv) {
   int port = -1;
 
   while (true) {
-    int current_optind = optind ? optind : 1;
 
     static struct option options[] = {{"port", required_argument, 0, 0},
                                       {"tnum", required_argument, 0, 0},
@@ -67,11 +68,17 @@ int main(int argc, char **argv) {
       switch (option_index) {
       case 0:
         port = atoi(optarg);
-        // TODO: your code here
+        if (port <= 0) {
+          fprintf(stderr, "Port must be positive number\n");
+          return 1;
+        }
         break;
       case 1:
         tnum = atoi(optarg);
-        // TODO: your code here
+        if (tnum <= 0) {
+          fprintf(stderr, "Thread number must be positive\n");
+          return 1;
+        }
         break;
       default:
         printf("Index %d is out of options\n", option_index);
@@ -132,20 +139,18 @@ int main(int argc, char **argv) {
     while (true) {
       unsigned int buffer_size = sizeof(uint64_t) * 3;
       char from_client[buffer_size];
-      int read = recv(client_fd, from_client, buffer_size, 0);
+      int read_bytes = recv(client_fd, from_client, buffer_size, 0);
 
-      if (!read)
+      if (read_bytes == 0)
         break;
-      if (read < 0) {
+      if (read_bytes < 0) {
         fprintf(stderr, "Client read failed\n");
         break;
       }
-      if (read < buffer_size) {
+      if (read_bytes < (int)buffer_size) {
         fprintf(stderr, "Client send wrong data format\n");
         break;
       }
-
-      pthread_t threads[tnum];
 
       uint64_t begin = 0;
       uint64_t end = 0;
@@ -154,30 +159,53 @@ int main(int argc, char **argv) {
       memcpy(&end, from_client + sizeof(uint64_t), sizeof(uint64_t));
       memcpy(&mod, from_client + 2 * sizeof(uint64_t), sizeof(uint64_t));
 
-      fprintf(stdout, "Receive: %llu %llu %llu\n", begin, end, mod);
+      fprintf(stdout, "Receive: %lu %lu %lu\n", begin, end, mod);
 
-      struct FactorialArgs args[tnum];
-      for (uint32_t i = 0; i < tnum; i++) {
-        // TODO: parallel somehow
-        args[i].begin = 1;
-        args[i].end = 1;
+      uint64_t range = end - begin + 1;
+      int actual_tnum = tnum;
+      
+      // Исправление: приведение к одному типу для сравнения
+      if ((uint64_t)tnum > range) {
+        actual_tnum = (int)range;
+      }
+
+      pthread_t threads[actual_tnum];
+      struct FactorialArgs args[actual_tnum];
+      
+      // Распределяем работу между потоками
+      uint64_t numbers_per_thread = range / (uint64_t)actual_tnum;
+      uint64_t remainder = range % (uint64_t)actual_tnum;
+      uint64_t current_start = begin;
+
+      // Исправление: использование одного типа в цикле
+      for (int i = 0; i < actual_tnum; i++) {
+        args[i].begin = current_start;
+        args[i].end = current_start + numbers_per_thread - 1;
+        
+        // Распределяем остаток
+        if (remainder > 0) {
+          args[i].end++;
+          remainder--;
+        }
+        
         args[i].mod = mod;
+        current_start = args[i].end + 1;
 
-        if (pthread_create(&threads[i], NULL, ThreadFactorial,
-                           (void *)&args[i])) {
-          printf("Error: pthread_create failed!\n");
+        if (pthread_create(&threads[i], NULL, ThreadFactorial, (void *)&args[i])) {
+          fprintf(stderr, "Error: pthread_create failed!\n");
           return 1;
         }
       }
 
       uint64_t total = 1;
-      for (uint32_t i = 0; i < tnum; i++) {
+      // Исправление: использование одного типа в цикле
+      for (int i = 0; i < actual_tnum; i++) {
         uint64_t result = 0;
         pthread_join(threads[i], (void **)&result);
         total = MultModulo(total, result, mod);
       }
 
-      printf("Total: %llu\n", total);
+      printf("Total: %lu\n", total);
 
       char buffer[sizeof(total)];
       memcpy(buffer, &total, sizeof(total));
@@ -192,5 +220,6 @@ int main(int argc, char **argv) {
     close(client_fd);
   }
 
+  close(server_fd);
   return 0;
 }
