@@ -26,4 +26,4 @@ bool ConvertStringToUI64(const char *str, uint64_t *val);
 // Функция для вычисления факториала в диапазоне
 uint64_t Factorial(const struct FactorialArgs *args);
 
-#endif // COMMON_H
+#endif

@@ -1,9 +1,0 @@
-cd lab6/src/Origin
-
-./server --port 20001 --tnum 4
-./server --port 20002 --tnum 4
-./server --port 20003 --tnum 3
-
-./client --k 100 --mod 1000000007 --servers servers.txt
-./client --k 10 --mod 100 --servers servers.txt
-./client --k 1000 --mod 1000000007 --servers servers.txt

@@ -1,9 +1,10 @@
 SERVER_COUNT=3
 TNUM_COUNT=4
+MOD = 100
+NUM = 5
 
 all: server client
 
-# Компиляция библиотеки
 common.o: common.c common.h
 	gcc -Wall -Wextra -pthread -g -c common.c -o common.o
 
@@ -51,7 +52,7 @@ stop-servers:
 	@echo "All servers stopped"
 
 test-client: client servers.txt
-	./client --k 20 --mod 1000000007 --servers servers.txt
+	./client --k $(NUM) --mod $(MOD) --servers servers.txt
 
 test: start-servers
 	@sleep 3

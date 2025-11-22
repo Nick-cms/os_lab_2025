@@ -16,7 +16,7 @@
 
 void *ThreadFactorial(void *args) {
     struct FactorialArgs *fargs = (struct FactorialArgs *)args;
-    uint64_t result = 0(fargs);
+    uint64_t result = Factorial(fargs);
     return (void *)(uintptr_t)result;
 }
 
